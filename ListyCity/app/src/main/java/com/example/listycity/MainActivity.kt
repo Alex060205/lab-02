@@ -1,9 +1,11 @@
+
 package com.example.listycity
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.listycity.ui.theme.ListyCityTheme
+import androidx.compose.foundation.clickable
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,6 +45,7 @@ class MainActivity : ComponentActivity() {
                     CityListScreen(
                         cities = cityRepository.cities,
                         onAddCity = { cityRepository.addCity(it) },
+                        onDeleteCity = { cityRepository.deleteCity(it) },
                         modifier = Modifier.padding( innerPadding)
                     )
                 }
@@ -50,56 +54,83 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// whole screen and display of cities
 @Composable
 fun CityListScreen(
     cities: List<String>,
     onAddCity: (String) -> Unit,
+    onDeleteCity: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var newCityName by remember { mutableStateOf("") }
+    var newCityName by remember {mutableStateOf( "")}
+    var cityToAdd by remember { mutableStateOf(false) }
+    var selectedCity by remember {mutableStateOf( "")}
 
+    // puts the textbox on the bottom of the screen
     Column(modifier = modifier.fillMaxSize()) {
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(cities) { city ->
-                CityRow(city = city)
+                CityRow(city = city,
+                    onClick = {
+                    selectedCity = city
+                }
+                )
             }
         }
-        Row(modifier = Modifier.padding(16.dp)) {
-            OutlinedTextField(
-                value = newCityName,
-                onValueChange = { newCityName = it },
-                label = { Text("City name") },
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+        // allows us to write on the textbox
+        OutlinedTextField(
+            value = newCityName,
+            onValueChange = { newCityName = it },
+            label = { Text("City name") },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        )
+        Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
 
+            // Add city buton
             Button(
                 onClick = {
-                    if (newCityName.isNotBlank()) {
-                        onAddCity(newCityName)
-                        newCityName = ""
-                    }
-                }
-            ) {
-                Text("Confirm")
-            }
-            Button(
-                onClick = {
-                    if (newCityName.isNotBlank()) {
-                        onAddCity(newCityName)
-                        newCityName = ""
-                    }
-                }
+                    cityToAdd = true
+                },
+                modifier = Modifier.weight(1f)
             ) {
                 Text("Add City")
             }
+
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // confirm button
             Button(
                 onClick = {
-                    if (newCityName.isNotBlank()) {
-                        onAddCity(newCityName)
-                        newCityName = ""
+
+                    if (cityToAdd) {
+                        if (newCityName.isNotBlank()) {
+                            onAddCity(newCityName)
+                            newCityName = ""
+                            cityToAdd = false
+                        }
                     }
-                }
+
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Confirm")
+            }
+
+
+            Spacer(
+                modifier = Modifier.width(8.dp)
+            )
+
+            // delete city button
+            Button(
+                onClick = {
+                    if (selectedCity != "") {
+                        onDeleteCity(selectedCity)
+                        selectedCity = ""
+                    }
+                },
+                modifier = Modifier.weight(1f)
             ) {
                 Text("Delete City")
             }
@@ -107,15 +138,16 @@ fun CityListScreen(
     }
 }
 
-
-
 @Composable
-fun CityRow(city : String) {
+fun CityRow(city : String, onClick: () -> Unit) {
     Text(
         text = city,
         fontSize = 28.sp,
         modifier = Modifier
             .fillMaxWidth()
+            .clickable{
+                onClick()
+            }
             .padding(horizontal = 18.dp, vertical = 14.dp)
     )
 }
@@ -130,6 +162,12 @@ class CityRepository {
     fun addCity(city: String){
         _cities.add(city)
     }
+    fun deleteCity(city: String) {
+        _cities.remove(city)
+    }
 }
+
+
+
 
 
